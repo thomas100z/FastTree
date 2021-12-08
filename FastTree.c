@@ -815,7 +815,7 @@ typedef struct {
 
 /* Global variables */
 /* Options */
-int verbose = 1;
+int verbose = 5;
 int showProgress = 1;
 int slow = 0;
 int fastest = 0;
