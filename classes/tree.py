@@ -11,6 +11,7 @@ class Tree:
         self.active_nodes = nodes
         self.m = m
         self.N = N
+        self.joins = 0
 
     def to_newick(self) -> str:
         return f"({self.root.print_newick()});"
@@ -23,10 +24,16 @@ class Tree:
             file.write(self.to_newick())
 
     def join_nodes(self, node_1: Node, node_2: Node) -> Node:
+
         joined_node = Node(node_1.name + node_2.name, "", Node.join_profiles(node_1.profile, node_2.profile), False)
         joined_node.add_child(node_1)
         joined_node.add_child(node_2)
+
         self.set_top_hits_node(joined_node, node_1.top_hits + node_2.top_hits)
+        self.joins += 1
+        self.active_nodes.append(joined_node)
+        self.nodes.append(joined_node)
+
         return joined_node
 
     def construct_initial_topology(self) -> None:
@@ -111,5 +118,12 @@ class Tree:
                     new_node.best_known.node = node
 
         new_node.top_hits = [k for i, (k, v) in
-                                 enumerate(sorted(node_distances.items(), key=lambda x: x[1]))
-                                 if i < self.m]
+                             enumerate(sorted(node_distances.items(), key=lambda x: x[1]))
+                             if i < self.m]
+
+    def calculate_branch_length(self):
+        for node in self.nodes:
+            if node.is_leaf:
+                raise 'to be implemented'
+            else:
+                raise 'to be implemented'

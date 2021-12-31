@@ -20,3 +20,5 @@ class TestTree(TestCase):
         self.assertTrue(len(new_node.top_hits) > 0)
 
 
+
+    # TODO tests: correct handeling of identical sequence

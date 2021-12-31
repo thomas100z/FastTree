@@ -21,7 +21,6 @@ m = round(math.sqrt(N))
 tree = Tree(nodes, m, N)
 
 a = 4
-joins_amount = 0
 nni_round = math.log(N)/math.log(2) + 1
 
 # calculate total profile
@@ -36,7 +35,7 @@ tree.construct_initial_topology()
 # NNI
 for i in range(round(nni_round)):
 
-    if joins_amount > 200:
+    if tree.joins > 200:
         tp.recompute()
 
     tree.nnis()
@@ -44,6 +43,7 @@ for i in range(round(nni_round)):
 # local bootstrap
 
 # branch length
+tree.calculate_branch_length()
 
 # print the tree
 print(tree.to_newick())
