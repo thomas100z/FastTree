@@ -40,7 +40,7 @@ class Tree:
         raise "to be implemented"
 
     def nnis(self) -> None:
-        raise "to be implemented"
+        raise Exception("to be implemented")
 
     def set_top_hits(self) -> None:
         """
@@ -68,11 +68,13 @@ class Tree:
                 # take 2m most similar
                 node_distances = {k: v for i, (k, v) in
                                   enumerate(sorted(node_distances.items(), key=lambda x: x[1])) if i < 2 * self.m}
-                current_node.top_hits = [k for i, (k, v) in
-                                         enumerate(sorted(node_distances.items(), key=lambda x: x[1])) if i < self.m]
+
+                current_node.top_hits = {k: v for i, (k, v) in
+                                         enumerate(sorted(node_distances.items(), key=lambda x: x[1]))
+                                         if i < self.m}
 
                 # compute for other nodes
-                for n in node_distances:
+                for n in current_node.top_hits:
                     current_node = n
                     if not current_node.top_hits:
                         other_distances = {}
@@ -92,9 +94,9 @@ class Tree:
                                     current_node.best_known.node = node
 
                         # set m most similar
-                        current_node.top_hits = [k for i, (k, v) in
+                        current_node.top_hits = {k: v for i, (k, v) in
                                                  enumerate(sorted(other_distances.items(), key=lambda x: x[1]))
-                                                 if i < self.m]
+                                                 if i < self.m}
 
     def set_top_hits_node(self, new_node: Node, children_top_hits: list[Node]) -> None:
         """
