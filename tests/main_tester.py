@@ -36,20 +36,20 @@ class MainTester(unittest.TestCase):
         # set the best join
         tree.construct_initial_topology()
 
-        # NNI
-        for i in range(round(nni_round)):
-            if joins_amount > 200:
-                tp.recompute()
-
-            tree.nnis()
-
-        # local bootstrap
-
-        # branch length
-        for node in tree.nodes:
-            pass
-        # print the tree
-        print(tree.to_newick())
+        # # NNI
+        # for i in range(round(nni_round)):
+        #     if joins_amount > 200:
+        #         tp.recompute()
+        #
+        #     tree.nearest_neighbor_interchange()
+        #
+        # # local bootstrap
+        #
+        # # branch length
+        # for node in tree.nodes:
+        #     pass
+        # # print the tree
+        # print(tree.to_newick())
 
 
 if __name__ == '__main__':

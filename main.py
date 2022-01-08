@@ -38,7 +38,7 @@ for i in range(round(nni_round)):
     if tree.joins > 200:
         tp.recompute()
 
-    tree.nnis()
+    tree.nearest_neighbor_interchange()
 
 # local bootstrap
 

@@ -8,8 +8,8 @@ class Tree:
     root: Node
 
     def __init__(self, nodes: list[Node], m: int, N: int) -> None:
-        self.nodes = nodes
-        self.active_nodes = nodes
+        self.nodes = nodes.copy()
+        self.active_nodes = nodes.copy()
         self.m = m
         self.N = N
         self.joins = 0
@@ -29,26 +29,56 @@ class Tree:
         joined_node = Node(node_1.name + node_2.name, "", Node.join_profiles(node_1.profile, node_2.profile), False)
         joined_node.add_child(node_1)
         joined_node.add_child(node_2)
+        childeren =list(set(list(node_1.top_hits.keys()) + list(node_2.top_hits.keys())))
 
-        self.set_top_hits_node(joined_node, node_1.top_hits + node_2.top_hits)
+        self.set_top_hits_node(joined_node, childeren)
         self.joins += 1
         self.active_nodes.append(joined_node)
         self.nodes.append(joined_node)
+
+        # remove from active
+        self.active_nodes.remove(node_1)
+        self.active_nodes.remove(node_2)
+        node_1.active = False
+        node_2.active = False
 
         return joined_node
 
     def construct_initial_topology(self) -> None:
 
-        # construct priority queue to find the m best best-know
-        best_knows = PriorityQueue()
-        any(best_knows.put(node) for node in self.nodes)
+        while len(self.active_nodes) > 1:
 
-        # get the m best best-knows from the priority queue
-        for _ in range(self.m):
-            current_node = best_knows.get()
+            # construct priority queue to find the m best best-know
+            best_knows = PriorityQueue()
+            any(best_knows.put(node) for node in self.active_nodes)
+            m_best_known = [best_knows.get() for _ in range(self.m)]
+
+            # recompute the neighbor joining criterion ...? TODO: does this do any thing? maybe recompute only among these M? that would make a differnce i think
+            best = None
+            least_distance = float('inf')
+            for node in m_best_known:
+                distance = Distances.neighbor_join_distance(node, node.best_known.node, self.active_nodes)
+                node.best_known.distance = distance
+                if distance < least_distance:
+                    best = node
+                    least_distance = distance
+
+            # perform hill climbing for the best TODO: set best with new node if better join found
+            node_1 = best
+            node_2 = best.best_known.node
+
+            for node in node_1.top_hits:
+                pass
+
+            for node in node_2.top_hits:
+                pass
+
+            self.join_nodes(node_1, node_2)
+
+        self.root = self.active_nodes.pop()
 
 
-    def nnis(self) -> None:
+    def nearest_neighbor_interchange(self) -> None:
         raise Exception("to be implemented")
 
     def set_top_hits(self) -> None:
@@ -128,9 +158,9 @@ class Tree:
                     node.best_known.distance = node_distances[node]
                     new_node.best_known.node = node
 
-        new_node.top_hits = [k for i, (k, v) in
+        new_node.top_hits = {k:v for i, (k, v) in
                              enumerate(sorted(node_distances.items(), key=lambda x: x[1]))
-                             if i < self.m]
+                             if i < self.m}
 
     def calculate_branch_length(self):
         for node in self.nodes:

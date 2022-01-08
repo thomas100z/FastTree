@@ -34,14 +34,15 @@ class Node:
         return hasattr(other, "best_known") and hasattr(self, "best_known")
 
     def __eq__(self, other):
-        if not self._is_valid_operand(other):
-            return NotImplemented
-        return self.best_known.distance == other.best_known.distance
+        return self.name == other.name
 
     def __lt__(self, other):
         if not self._is_valid_operand(other):
             return NotImplemented
         return self.best_known.distance < other.best_known.distance
+
+    def __hash__(self):
+        return hash(self.name)
 
     def add_child(self, node: Node) -> None:
         self.children.append(node)
