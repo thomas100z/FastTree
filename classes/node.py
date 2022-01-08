@@ -1,6 +1,6 @@
 from __future__ import annotations
+from functools import total_ordering
 import numpy as np
-
 
 
 class BestKnown:
@@ -8,9 +8,10 @@ class BestKnown:
     distance: float
 
     def __init__(self) -> None:
-        self.distance =  float('inf')
+        self.distance = float('inf')
 
 
+@total_ordering
 class Node:
 
     def __init__(self, name: str, alignment: str, profile: np.array = None, is_leaf: bool = True) -> None:
@@ -29,9 +30,35 @@ class Node:
 
         self.top_hits = []
 
+    def _is_valid_operand(self, other):
+        return hasattr(other, "best_known") and hasattr(self, "best_known")
+
+    def __eq__(self, other):
+        if not self._is_valid_operand(other):
+            return NotImplemented
+        return self.best_known.distance == other.best_known.distance
+
+    def __lt__(self, other):
+        if not self._is_valid_operand(other):
+            return NotImplemented
+        return self.best_known.distance < other.best_known.distance
+
     def add_child(self, node: Node) -> None:
         self.children.append(node)
 
+    def print_newick(self):
+        if len(self.children) > 0:
+            print('(')
+        for child in self.children:
+            child.print_newick()
+            print(f'{self.name}:{self.branch_length}', end="")
+
+        if len(self.children) > 0:
+            print(')')
+
+    @staticmethod
+    def join_profiles(profile1: np.array, profile2: np.array) -> np.array:
+        return np.mean(np.array([profile1, profile2]), axis=0)
 
     def form_profile(self, psuesdocount=False) -> np.array[float]:
         sequences = [self.alignment]
@@ -51,19 +78,3 @@ class Node:
                 profile[bases.index(sequences[i][j])][j] += 1
 
         return profile / (len(sequences) + base_value)
-
-    def print_newick(self):
-        if len(self.children) > 0:
-            print('(')
-        for child in self.children:
-            child.print_newick()
-            print(f'{self.name}:{self.branch_length}', end="")
-
-        if len(self.children) > 0:
-            print(')')
-
-    @staticmethod
-    def join_profiles(profile1: np.array, profile2: np.array) -> np.array:
-        return np.mean(np.array([profile1, profile2]), axis=0)
-
-

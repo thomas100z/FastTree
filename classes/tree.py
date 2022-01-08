@@ -1,4 +1,5 @@
 from __future__ import annotations
+from queue import PriorityQueue
 from .node import Node
 from .distances import Distances
 
@@ -37,7 +38,15 @@ class Tree:
         return joined_node
 
     def construct_initial_topology(self) -> None:
-        raise "to be implemented"
+
+        # construct priority queue to find the m best best-know
+        best_knows = PriorityQueue()
+        any(best_knows.put(node) for node in self.nodes)
+
+        # get the m best best-knows from the priority queue
+        for _ in range(self.m):
+            current_node = best_knows.get()
+
 
     def nnis(self) -> None:
         raise Exception("to be implemented")
