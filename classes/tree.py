@@ -15,7 +15,7 @@ class Tree:
         self.joins = 0
 
     def to_newick(self) -> str:
-        return f"({self.root.print_newick()});"
+        return f"{self.root.print_newick()};"
 
     def deactivate_node(self, node: Node) -> None:
         self.active_nodes.remove(node)
@@ -100,11 +100,11 @@ class Tree:
                   
                 for j in range(1,len(l)):     
                     if l[j].best_known.distance < min_distance and l[j].best_known.node in self.active_nodes:
-                        min_distance = l[j].best_known.distance;
+                        min_distance = l[j].best_known.distance
                         min_node = l[j]
                           
                 m_best_known.append(min_node)
-                l.remove(min_node);
+                l.remove(min_node)
                 
 
             # recompute the neighbor joining criterion ...? TODO: does this do any thing? maybe recompute only among these M? that would make a differnce i think

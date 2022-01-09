@@ -21,7 +21,7 @@ class Node:
         self.name = name
         self.is_leaf = is_leaf
         self.active = True
-        self.branch_length = 0
+        self.branch_length = 1
         self.best_known = BestKnown()
 
         if is_leaf:
@@ -48,15 +48,15 @@ class Node:
     def add_child(self, node: Node) -> None:
         self.children.append(node)
 
-    def print_newick(self):
-        if len(self.children) > 0:
-            print('(')
-        for child in self.children:
-            child.print_newick()
-            print(f'{self.name}:{self.branch_length}', end="")
+    def print_newick(self) -> str:
+        result = ""
+        if self.is_leaf:
+            result += f'{self.name}:{self.branch_length}'
+        else:
+            self.children.sort(key=lambda x: x.is_leaf, reverse=True)
+            result += f'({",".join([child.print_newick() for child in self.children])})'
 
-        if len(self.children) > 0:
-            print(')')
+        return result
 
     @staticmethod
     def join_profiles(profile1: np.array, profile2: np.array) -> np.array:
