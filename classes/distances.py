@@ -89,10 +89,41 @@ class Distances:
 
         : du(i,j) - r(i) - r(j)
         """
-        return Distances.node_distance(node1, node2) - Distances.out_distance(node1, active) - Distances.out_distance(
-            node2, active)
+        # can change the return statement to compute neighbor join with or without total Profile
+# =============================================================================
+#         return Distances.node_distance(node1, node2) - Distances.out_distance(node1, active) - Distances.out_distance(
+#             node2, active)
+# =============================================================================
+        return Distances.node_distance(node1, node2) - Distances.total_profile_out_distance(node1, TotalProfile(active), active) -\
+            Distances.total_profile_out_distance(node2, TotalProfile(active), active)
+    
+    @staticmethod
+    def total_profile_out_distance(node: Node, tp: TotalProfile, active: list) -> float:
+        """
+        n∆(i, T) − ∆(i, i) − (n − 1)u(i) + u(i) - Σ u(j)
+        
+        r(i): Out Distance
+        """
+        S = 0
+        for n in active:
+            S += Distances.up_distance(node)
+            
+        result = len(active) * Distances.profile_distance(node.profile, tp.total_profile) - \
+                 Distances.average_node_children_distance(node) - (len(active) - 2) * Distances.up_distance(node) - S
+        
+        return result / (len(active) - 2) if len(active) > 2 else result / (len(active))
 
     @staticmethod
-    def neighbour_joining_criterion(tp: TotalProfile, node: Node) -> float:
+    def average_node_children_distance(node: Node) -> float:
+        """
+        ∆(i, i): the average distance between children of i, including self-comparisons
 
-        return 0.0
+        """
+        #return 0
+        if len(node.children) == 0: return 0
+        S = 0
+        for child in node.children:
+            for child2 in node.children:
+                S += Distances.profile_distance(child.profile, child2.profile)
+        return S / (len(node.children) * len(node.children))
+

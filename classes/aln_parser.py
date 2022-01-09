@@ -12,5 +12,5 @@ class AlignmentParser:
                 self.sequences.append(Node(lines[(i * 2)].strip('>'), lines[(i * 2) + 1].strip()))
 
 
-    def get_data(self) -> list[Node]:
+    def get_data(self) -> list:
         return self.sequences

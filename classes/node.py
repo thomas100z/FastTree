@@ -16,6 +16,7 @@ class Node:
 
     def __init__(self, name: str, alignment: str, profile: np.array = None, is_leaf: bool = True) -> None:
         self.children = []
+        self.parent = Node
         self.alignment = alignment
         self.name = name
         self.is_leaf = is_leaf

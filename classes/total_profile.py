@@ -6,7 +6,7 @@ class TotalProfile:
     active: int
     total_profile: np.array
 
-    def __init__(self, nodes: list[Node]) -> None:
+    def __init__(self, nodes: list) -> None:
         self.nodes = nodes
         self.recompute()
 
