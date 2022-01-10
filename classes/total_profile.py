@@ -8,16 +8,16 @@ class TotalProfile:
 
     def __init__(self, nodes: list) -> None:
         self.nodes = nodes
-        self.recompute()
+        self.recompute(nodes)
 
-    def recompute(self) -> None:
+    def recompute(self, active_nodes: list[Node]) -> None:
+        self.nodes = active_nodes
         profile = 0
         active = 0
 
         for node in self.nodes:
-            if node.active:
-                profile += node.profile
-                active += 1
+            profile += node.profile
+            active += 1
 
         self.active = active
         self.total_profile = profile / active if active != 0 else 0

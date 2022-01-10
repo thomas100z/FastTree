@@ -21,7 +21,7 @@ m = round(math.sqrt(N))
 tree = Tree(nodes, m, N)
 
 a = 4
-nni_round = math.log(N)/math.log(2) + 1
+nni_round = math.log(N) / math.log(2) + 1
 
 # calculate total profile
 tp = TotalProfile(nodes)
@@ -33,12 +33,17 @@ tree.set_top_hits()
 tree.construct_initial_topology()
 
 # NNI
+previous_changes = 0
 for i in range(round(nni_round)):
+    previous_changes = tree.joins
 
     if tree.joins > 200:
-        tp.recompute()
+        tp.recompute(tree.active_nodes)
 
     tree.nearest_neighbor_interchange()
+
+    if previous_changes == tree.joins:
+        break
 
 # local bootstrap
 
@@ -48,4 +53,3 @@ tree.calculate_branch_length()
 # print the tree
 print(tree.to_newick())
 tree.save(args.output_file)
-

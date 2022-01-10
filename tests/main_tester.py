@@ -6,7 +6,7 @@ class MainTester(unittest.TestCase):
 
     def test_main(self):
 
-        parser = aln_parser.AlignmentParser("./resources/test-small.aln")
+        parser = aln_parser.AlignmentParser("./resources/fasttree-input.aln")
         nodes = parser.get_data()
 
 
@@ -37,11 +37,11 @@ class MainTester(unittest.TestCase):
         tree.construct_initial_topology()
 
         # # NNI
-        # for i in range(round(nni_round)):
-        #     if joins_amount > 200:
-        #         tp.recompute()
-        #
-        #     tree.nearest_neighbor_interchange()
+        for i in range(1): #range(round(nni_round)):
+            if joins_amount > 200:
+                tp.recompute(tree.active_nodes)
+
+            tree.nearest_neighbor_interchange()
         #
         # # local bootstrap
         #
@@ -49,7 +49,7 @@ class MainTester(unittest.TestCase):
         # for node in tree.nodes:
         #     pass
         # # print the tree
-        # print(tree.to_newick())
+        print(tree.to_newick())
 
 
 if __name__ == '__main__':

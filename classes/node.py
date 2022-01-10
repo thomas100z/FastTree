@@ -20,7 +20,6 @@ class Node:
         self.alignment = alignment
         self.name = name
         self.is_leaf = is_leaf
-        self.active = True
         self.branch_length = 1
         self.best_known = BestKnown()
 
@@ -80,3 +79,6 @@ class Node:
                 profile[bases.index(sequences[i][j])][j] += 1
 
         return profile / (len(sequences) + base_value)
+
+    def recompute_profile(self) -> None:
+        self.profile = np.mean(np.array([node.profile for node in self.children]), axis=0)
