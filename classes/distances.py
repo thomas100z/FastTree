@@ -137,4 +137,10 @@ class Distances:
         :param profile_2: the second profile
         :return:
         """
-        return Distances.profile_distance(profile_1, profile_2)
+        return  Distances.profile_distance(profile_1, profile_2)
+        # du = 1 - (4 / 3) * Distances.profile_distance(profile_1, profile_2)
+        # print(du)
+        # if 0 < du:
+        #     return -3 / 4 * math.log10(du)
+        # else:
+        #     return 1.5

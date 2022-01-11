@@ -55,17 +55,12 @@ for node in nodes:
 tree.construct_initial_topology()
 
 # NNI
-previous_changes = 0
 for i in range(round(nni_round)):
-    previous_changes = tree.joins
 
     if tree.joins > 200:
         tp.recompute(tree.active_nodes)
 
     tree.nearest_neighbor_interchange()
-
-    if previous_changes == tree.joins:
-        break
 
 # local bootstrap
 
