@@ -20,14 +20,27 @@ class Tree:
         self.joins = 0
 
     def to_newick(self) -> str:
-        return f"{self.root.print_newick()};"
+        """
+        Constructs newick format representation of the tree.
+        :return: newick string
+        """
+        return f"{self.root.newick()};"
 
     def save(self, path: str) -> None:
+        """
+        Saves the newick representation of the tree to a file
+        :param path: the path of the file to save
+        """
         with open(path, 'w') as file:
             file.write(self.to_newick())
 
     def join_nodes(self, node_1: Node, node_2: Node) -> Node:
-
+        """
+        Joines two nodes by creating a parent node and setting the two nodes as its children
+        :param node_1: the first node to join
+        :param node_2: the second node to join
+        :return:
+        """
         joined_node = Node(node_1.name + node_2.name, "", Node.join_profiles(node_1.profile, node_2.profile), False)
         joined_node.add_child(node_1)
         joined_node.add_child(node_2)
@@ -67,7 +80,9 @@ class Tree:
         return joined_node
 
     def construct_initial_topology(self) -> None:
-
+        """
+        Construct the initial topology of the tree
+        """
         # construct priority queue to find the m best best-know
         best_knows = PriorityQueue()
         any(best_knows.put(node) for node in self.active_nodes)
@@ -138,7 +153,9 @@ class Tree:
         self.root = self.active_nodes.pop()
 
     def nearest_neighbor_interchange(self) -> None:
-
+        """
+        Perform nearest neighbor interchange to evaluate if a split is favorable
+        """
         # for all nodes check if they support a split
         for current_node in self.nodes:
 
@@ -146,33 +163,42 @@ class Tree:
             if current_node.parent and current_node.parent.parent and current_node.parent.parent.parent:
 
                 # determine the a, b, c and d node for evaluating a different topology
-                # todo: fill correct nodes here and make sure to do recompute in the right order
-                a = None
-                b = None
-                c = None
-                d = None
+                a = current_node
+                b = current_node.get_sibling()
+                c = current_node.parent.get_sibling()
+                d = current_node.parent.parent.parent
 
                 logger.debug(f'topology being evaluated: \ta=:{a.name}\tb:{b.name}\tc:{c.name}\td:{d.name}')
 
                 # topology abcd
-                d_abcd = Distances.profile_distance(a.profile, d.profile) + Distances.profile_distance(c.profile,
-                                                                                                       d.profile)
-                # topology acbd
-                d_acbd = Distances.profile_distance(a.profile, c.profile) + Distances.profile_distance(b.profile,
-                                                                                                       d.profile)
-                # topology adbc
-                d_adbc = Distances.profile_distance(a.profile, d.profile) + Distances.profile_distance(b.profile,
-                                                                                                       c.profile)
-                if d_adbc < min(d_abcd, d_acbd):
-                    logger.debug(f'switching nodes: {d.name} - {b.name}')
-                    self.switch_nodes(d, b)
+                d_abcd = Distances.log_corrected_profile_distance(a.profile, d.profile) + \
+                         Distances.log_corrected_profile_distance(c.profile, d.profile)
 
-                elif d_acbd < min(d_abcd, d_adbc):
+                # topology acbd
+                d_acbd = Distances.log_corrected_profile_distance(a.profile, c.profile) + \
+                         Distances.log_corrected_profile_distance(b.profile, d.profile)
+
+                # topology adbc
+                d_bcad = Distances.log_corrected_profile_distance(b.profile, c.profile) + \
+                         Distances.log_corrected_profile_distance(a.profile, d.profile)
+
+
+
+                if d_bcad < min(d_abcd, d_acbd):
+                    logger.debug(f'switching nodes: {d.name} - {b.name}')
+                    self.switch_nodes(b, a)
+
+                elif d_acbd < min(d_abcd, d_bcad):
                     logger.debug(f'switching nodes: {c.name} - {b.name}')
                     self.switch_nodes(b, c)
 
     @staticmethod
     def switch_nodes(node_1: Node, node_2: Node) -> None:
+        """
+        Switches two nodes in the tree. Can be leaves or subtrees
+        :param node_1: the first node to switch
+        :param node_2: the second node to switch
+        """
         parent_1 = node_1.parent
         parent_2 = node_2.parent
 
@@ -185,12 +211,13 @@ class Tree:
         parent_1.children.append(node_2)
         node_2.parent = parent_1
 
-        parent_1.recompute_profile()
         parent_2.recompute_profile()
+        parent_1.recompute_profile()
+
 
     def set_top_hits(self) -> None:
         """
-
+        Sets a list op top hits for all the active nodes.
         """
         for current_node in self.nodes:
             if not current_node.top_hits:
@@ -246,10 +273,10 @@ class Tree:
 
     def set_top_hits_node(self, new_node: Node, children_top_hits: list[Node], children: list[Node]) -> None:
         """
-
-        :param children:
-        :param new_node:
-        :param children_top_hits:
+        Sets top hits list for a specific node, that has been created during joining
+        :param children: combined children of the joined nodes
+        :param new_node: the newly joined node
+        :param children_top_hits: list of top hits
         """
         if all(elem not in self.active_nodes for elem in children_top_hits):
             children_top_hits = self.active_nodes
@@ -274,6 +301,9 @@ class Tree:
                              if i < self.m}
 
     def calculate_branch_length(self):
+        """
+        Calculates the branch length for all nodes
+        """
         for node in self.nodes:
             if node.is_leaf:
                 raise 'to be implemented'

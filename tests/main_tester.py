@@ -1,5 +1,10 @@
 from classes import *
 import unittest
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='[%I:%M:%S %p]')
+logger = logging.getLogger('FastTree')
+logging.basicConfig(level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 class MainTester(unittest.TestCase):
@@ -41,17 +46,14 @@ class MainTester(unittest.TestCase):
             print(f'{node=}\t{node.is_active=}')
         print(tree.to_newick())
         # # NNI
-        previous_changes = 0
+
         for i in range(round(nni_round)):
-            previous_changes = tree.joins
 
             if tree.joins > 200:
                 tp.recompute(tree.active_nodes)
 
             tree.nearest_neighbor_interchange()
 
-            if previous_changes == tree.joins:
-                break
 
         #
         # # local bootstrap

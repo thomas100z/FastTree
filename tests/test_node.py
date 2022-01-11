@@ -4,7 +4,7 @@ from classes import *
 
 class TestNode(TestCase):
 
-    def test_pq_for_nodes(self):
+    def test_pq_for_nodes(self) -> None:
         """
         Test if a priority queue returns the nodes in the correct order
         :return: None
@@ -23,3 +23,15 @@ class TestNode(TestCase):
             result.append(pq.get().name)
 
         self.assertEqual(result, ["A", "C", "B"])
+
+    def test_get_sibling(self) -> None:
+        A = Node("A", "ATCGCG")
+        B = Node("B", "ATCGAA")
+        C = Node("C", "ATCGGG")
+
+        A.children.append(B)
+        A.children.append(C)
+        B.parent = A
+        C.parent = A
+
+        self.assertEqual(B.get_sibling().name, 'C')
