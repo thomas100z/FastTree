@@ -2,6 +2,9 @@ from __future__ import annotations
 from queue import PriorityQueue
 from .node import Node
 from .distances import Distances
+import logging
+
+logger = logging.getLogger('FastTree')
 
 DEBUG = False
 
@@ -30,6 +33,8 @@ class Tree:
         joined_node.add_child(node_2)
         node_1.parent = joined_node
         node_2.parent = joined_node
+        node_1.is_active = False
+        node_2.is_active = False
 
         # remove from active
         self.active_nodes.remove(node_1)
@@ -63,6 +68,11 @@ class Tree:
 
     def construct_initial_topology(self) -> None:
 
+        # construct priority queue to find the m best best-know
+        best_knows = PriorityQueue()
+        any(best_knows.put(node) for node in self.active_nodes)
+        m_best_known = [best_knows.get() for _ in range(self.m)]
+
         while len(self.active_nodes) > 1:
 
             # Check that all the best joins show to an active node after a join
@@ -71,107 +81,78 @@ class Tree:
                     node.best_known.node = node.best_known.node.parent
                     node.best_known.distance = Distances.neighbor_join_distance(node.best_known.node, node,
                                                                                 self.active_nodes)
+            for node in m_best_known:
+                if not node.is_active:
+                    m_best_known.remove(node)
+
+            while len(m_best_known) < min(self.m, len(self.active_nodes)):
+                temp = best_knows.get()
+                if temp.is_active:
+                    m_best_known.append(temp)
 
             """ TO DO: Periodically refresh the top hit lists"""
 
-            # =============================================================================
-            #             # construct priority queue to find the m best best-know
-            #             best_knows = PriorityQueue()
-            #             any(best_knows.put(node) for node in self.active_nodes)
-            #             m_best_known = [best_knows.get() for _ in range(self.m)]
-            #
-            #             for node in m_best_known:
-            #                 print(node.name, node.best_known.node.name)
-            # =============================================================================
-            # have commented out the priority queue, not sure if we really need it,
-            # have done it with simple list comparisons to get the top m out of 
-            # all the active nodes
-            l = self.active_nodes.copy()
-
-            m_best_known = []
-            for i in range(min(len(l), self.m)):
-                min_distance = 0
-                min_node = l[0]
-
-                for j in range(1, len(l)):
-                    if l[j].best_known.distance < min_distance and l[j].best_known.node in self.active_nodes:
-                        min_distance = l[j].best_known.distance
-                        min_node = l[j]
-
-                m_best_known.append(min_node)
-                l.remove(min_node)
-
-            # recompute the neighbor joining criterion ...? TODO: does this do any thing? maybe recompute only among these M? that would make a differnce i think
+            # recompute the neighbor joining criterion
             best = None
             least_distance = float('inf')
             for node in m_best_known:
-                distance = Distances.neighbor_join_distance(node, node.best_known.node, self.active_nodes)
-                node.best_known.distance = distance
-                if distance < least_distance:
-                    best = node
-                    least_distance = distance
+                if node.is_active:
+                    distance = Distances.neighbor_join_distance(node, node.best_known.node, self.active_nodes)
+                    node.best_known.distance = distance
+                    if distance < least_distance:
+                        best = node
+                        least_distance = distance
+                else:
+                    m_best_known.remove(node)
+                    m_best_known.append(best_knows.get())
 
-            # perform hill climbing for the best TODO: set best with new node if better join found
+            # perform hill climbing for the best
+            logger.debug(f'{best=}\t, {len(m_best_known)}\t{len(self.active_nodes)}')
+
             node_1 = best
             node_2 = best.best_known.node
 
             selected_1 = node_1
             selected_2 = node_2
 
-            # Local Hill Climbing- Not sure if this is correct
-            # =============================================================================
-            #             for node in node_1.top_hits:
-            #                 distance = Distances.neighbor_join_distance(node_1, node, self.active_nodes)
-            #                 if distance < least_distance:
-            #                     selected_1 = node_1
-            #                     selected_2 = node
-            #                     least_distance = distance
-            #
-            #             for node in node_2.top_hits:
-            #                 distance = Distances.neighbor_join_distance(node, node_2, self.active_nodes)
-            #                 if distance < least_distance:
-            #                     selected_1 = node
-            #                     selected_2 = node_2
-            #                     least_distance = distance
-            # =============================================================================
+            # Local Hill Climbing
+            for node in node_1.top_hits:
+                distance = Distances.neighbor_join_distance(node_1, node, self.active_nodes)
+                if distance < least_distance:
+                    selected_1 = node_1
+                    selected_2 = node
+                    least_distance = distance
 
-            # print("Selected Node 1: {}".format(selected_1.name))
-            # print("Selected Node_2: {}".format(selected_2.name))
-            self.join_nodes(selected_1, selected_2)
+            for node in node_2.top_hits:
+                distance = Distances.neighbor_join_distance(node, node_2, self.active_nodes)
+                if distance < least_distance:
+                    selected_1 = node
+                    selected_2 = node_2
+                    least_distance = distance
 
-            # print("Active Nodes after the join:")
-            # for node in self.active_nodes:
-            #     print(node.name)
+            logger.debug(f"joining nodes: {selected_1.name} -  {selected_2.name}")
 
-            # print("Number of active: {}".format(len(self.active_nodes)))
-            # print("----------------\n")
+            joined_node = self.join_nodes(selected_1, selected_2)
+            best_knows.put(joined_node)
 
         self.root = self.active_nodes.pop()
 
     def nearest_neighbor_interchange(self) -> None:
 
-        # traverse the tree to find all possible splits
-        queue = [self.root]
-        while queue:
-            current_node = queue.pop()
+        # for all nodes check if they support a split
+        for current_node in self.nodes:
 
-            # can't switch two leafs
-            if not all([n.is_leaf for n in current_node.children]):
+            # because all nodes have two children the only condition is to have 3 parents
+            if current_node.parent and current_node.parent.parent and current_node.parent.parent.parent:
 
-                a = current_node
+                # determine the a, b, c and d node for evaluating a different topology
+                # todo: fill correct nodes here and make sure to do recompute in the right order
+                a = None
+                b = None
+                c = None
+                d = None
 
-                # if there is a leaf that needs to be B
-                if any([n.is_leaf for n in current_node.children]):
-                    b = current_node.children[[n.is_leaf for n in current_node.children].index(True)]
-                    other = current_node.children[[n.is_leaf for n in current_node.children].index(False)]
-                    c, d = other.children[0], other.children[1]
-
-                else:
-                    b = current_node.children[0]
-                    c = current_node.children[1].children[0]
-                    d = current_node.children[1].children[1]
-
-                #print(f'node a: {a.name}, node b: {b.name} node c: {c.name}, node d: {d.name}')
+                logger.debug(f'topology being evaluated: \ta=:{a.name}\tb:{b.name}\tc:{c.name}\td:{d.name}')
 
                 # topology abcd
                 d_abcd = Distances.profile_distance(a.profile, d.profile) + Distances.profile_distance(c.profile,
@@ -182,19 +163,13 @@ class Tree:
                 # topology adbc
                 d_adbc = Distances.profile_distance(a.profile, d.profile) + Distances.profile_distance(b.profile,
                                                                                                        c.profile)
-
-                print(d_abcd, d_acbd, d_adbc)
                 if d_adbc < min(d_abcd, d_acbd):
-                    print('switch')
+                    logger.debug(f'switching nodes: {d.name} - {b.name}')
                     self.switch_nodes(d, b)
 
                 elif d_acbd < min(d_abcd, d_adbc):
-                    print('switch')
-                    self.switch_nodes(d, b)
-
-                for child in current_node.children:
-                    if not child.is_leaf:
-                        queue.append(child)
+                    logger.debug(f'switching nodes: {c.name} - {b.name}')
+                    self.switch_nodes(b, c)
 
     @staticmethod
     def switch_nodes(node_1: Node, node_2: Node) -> None:
@@ -212,7 +187,6 @@ class Tree:
 
         parent_1.recompute_profile()
         parent_2.recompute_profile()
-
 
     def set_top_hits(self) -> None:
         """

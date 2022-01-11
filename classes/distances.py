@@ -127,3 +127,7 @@ class Distances:
                 S += Distances.profile_distance(child.profile, child2.profile)
         return S / (len(node.children) * len(node.children))
 
+
+    @staticmethod
+    def log_corrected_profile_distance() -> float:
+

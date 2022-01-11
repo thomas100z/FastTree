@@ -1,6 +1,9 @@
 from __future__ import annotations
 from functools import total_ordering
 import numpy as np
+import logging
+
+logger = logging.getLogger('FastTree')
 
 
 class BestKnown:
@@ -16,10 +19,11 @@ class Node:
 
     def __init__(self, name: str, alignment: str, profile: np.array = None, is_leaf: bool = True) -> None:
         self.children = []
-        self.parent = Node
+        self.parent = None
         self.alignment = alignment
         self.name = name
         self.is_leaf = is_leaf
+        self.is_active = True
         self.branch_length = 1
         self.best_known = BestKnown()
 
@@ -82,3 +86,8 @@ class Node:
 
     def recompute_profile(self) -> None:
         self.profile = np.mean(np.array([node.profile for node in self.children]), axis=0)
+
+    def get_sibling(self) -> Node:
+        parent_children = self.parent.children
+        return parent_children[parent_children.index(self) - 1]
+
