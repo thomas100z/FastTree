@@ -10,7 +10,7 @@ class TotalProfile:
         self.nodes = nodes
         self.recompute(nodes)
 
-    def recompute(self, active_nodes: list[Node]) -> None:
+    def recompute(self, active_nodes: list) -> None:
         """
         recomputes the total profile from all the active nodes
         :param active_nodes: list of active nodes

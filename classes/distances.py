@@ -10,6 +10,8 @@ class Distances:
     def uncorrected_distance(sequence_1: str, sequence_2: str) -> float:
         """
         du: uncorrected sequence distance
+        :param sequence_1: the first sequence
+        :param sequence_2: the second sequence
         """
         result = 0
         gaps = 0
@@ -24,42 +26,37 @@ class Distances:
     @staticmethod
     def corrected_distance(sequence_1: str, sequence_2: str) -> float:
         """
-        d: corrected sequence distance
+        d: log-corrected sequence distance
+        :param sequence_1: the first sequence
+        :param sequence_2: the second sequence
         """
-        # du = 1 - (4 / 3) * DistanceProfile.uncorrected_distance(sequence_1, sequence_2)
         du = 1 - (4 / 3) * Distances.uncorrected_distance(sequence_1, sequence_2)
         if 0 < du:
             return -3 / 4 * math.log10(du)
         else:
-            # TODO:
-            # ask
             return 1.5
 
     @staticmethod
     def profile_distance(profile_1: np.array, profile_2: np.array) -> float:
         """
         D: profile distance
-
-        du(i,j) = D(i,j) (for leaves)
-
-        du(ij,k) = D(ij,k) - u(i,j) - u(k) (else)
-
+        :param profile_1: the first profile
+        :param profile_2: the second profile
         """
         S = 0
         for i in range(4):
             for j in range(len(profile_1[0])):
                 S += abs(profile_1[i, j] - profile_2[i, j])
 
-        return S / 4
+        return S / (4 * len(profile_1[0]))
 
     @staticmethod
     def up_distance(node: Node) -> float:
         """
         u: up-distance
-
         u(i) = 0 (Leaf Node)
         u(ij) = D(ij)/2 (Half the profile distance)
-
+        :param node: the given node
         """
         if node.is_leaf:
             return 0.0
@@ -75,6 +72,8 @@ class Distances:
     def out_distance(node: Node, active: list) -> float:
         """
         r(i): Out Distance
+        :param node: the given node
+        :param active: the list of all active nodes
         """
         S = 0
         for n in active:
@@ -85,9 +84,10 @@ class Distances:
     @staticmethod
     def neighbor_join_distance(node1: Node, node2: Node, active: list) -> float:
         """
-        Neighbor-Joining Distance
-
-        : du(i,j) - r(i) - r(j)
+        Neighbor-Joining Distance: du(i,j) - r(i) - r(j)
+        :param node1: the first node
+        :param node2: the second node
+        :param active: the list of all active nodes
         """
         # can change the return statement to compute neighbor join with or without total Profile
         # =============================================================================
@@ -101,9 +101,10 @@ class Distances:
     @staticmethod
     def total_profile_out_distance(node: Node, tp: TotalProfile, active: list) -> float:
         """
-        n∆(i, T) − ∆(i, i) − (n − 1)u(i) + u(i) - Σ u(j)
-        
-        r(i): Out Distance
+        r(i): Out Distance = n∆(i, T) − ∆(i, i) − (n − 1)u(i) + u(i) - Σ u(j)
+        :param node: the given node
+        :param tp: the total profile of the tree
+        :param active: the list of all active nodes
         """
         S = 0
         for n in active:
@@ -118,7 +119,7 @@ class Distances:
     def average_node_children_distance(node: Node) -> float:
         """
         ∆(i, i): the average distance between children of i, including self-comparisons
-
+        :param node: the given node under examination
         """
         # return 0
         if len(node.children) == 0: return 0
@@ -137,10 +138,9 @@ class Distances:
         :param profile_2: the second profile
         :return:
         """
-        return  Distances.profile_distance(profile_1, profile_2)
-        # du = 1 - (4 / 3) * Distances.profile_distance(profile_1, profile_2)
-        # print(du)
-        # if 0 < du:
-        #     return -3 / 4 * math.log10(du)
-        # else:
-        #     return 1.5
+        #return  Distances.profile_distance(profile_1, profile_2)
+        du = 1 - (4 / 3) * Distances.profile_distance(profile_1, profile_2)
+        if 0 < du:
+            return -3 / 4 * math.log10(du)
+        else:
+            return 1.5

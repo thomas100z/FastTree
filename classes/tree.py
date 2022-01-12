@@ -81,7 +81,8 @@ class Tree:
 
     def construct_initial_topology(self) -> None:
         """
-        Construct the initial topology of the tree
+        Constructs the initial topology of the tree using the top-hits heuristic
+        and neighbor-joining criterion
         """
         # construct priority queue to find the m best best-know
         best_knows = PriorityQueue()
@@ -105,8 +106,6 @@ class Tree:
                 if temp.is_active:
                     m_best_known.append(temp)
 
-            """ TO DO: Periodically refresh the top hit lists"""
-
             # recompute the neighbor joining criterion
             best = None
             least_distance = float('inf')
@@ -121,9 +120,10 @@ class Tree:
                     m_best_known.remove(node)
                     m_best_known.append(best_knows.get())
 
-            # perform hill climbing for the best
+            # log initial best nodes
             logger.debug(f'{best=}\t, {len(m_best_known)}\t{len(self.active_nodes)}')
-
+            
+            # perform hill climbing for the current two best nodes
             node_1 = best
             node_2 = best.best_known.node
 
@@ -144,12 +144,13 @@ class Tree:
                     selected_1 = node
                     selected_2 = node_2
                     least_distance = distance
-
+            # log final best nodes after hill climbing
             logger.debug(f"joining nodes: {selected_1.name} -  {selected_2.name}")
 
             joined_node = self.join_nodes(selected_1, selected_2)
             best_knows.put(joined_node)
-
+        
+        # save the last remaining active node as the root of the tree
         self.root = self.active_nodes.pop()
         logger.debug(f'Initial topology:\t{self.to_newick()}')
 
@@ -230,14 +231,14 @@ class Tree:
         parent_1.recompute_profile()
 
         # rename the parent nodes
-        parent_1.name = parent_1.rename()
-        parent_2.name = parent_2.rename()
+        parent_1.rename()
+        parent_2.rename()
 
         logger.debug(f'new topology:\t{self.to_newick()}')
 
     def set_top_hits(self) -> None:
         """
-        Sets a list op top hits for all the active nodes.
+        Sets a list of top hits for all the active nodes.
         """
         for current_node in self.nodes:
             if not current_node.top_hits:
