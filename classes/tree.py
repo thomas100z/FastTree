@@ -326,7 +326,44 @@ class Tree:
         Calculates the branch length for all nodes
         """
         for node in self.nodes:
+		
+			# if current node is leaf node A
             if node.is_leaf:
-                raise 'to be implemented'
-            else:
-                raise 'to be implemented'
+				a = node
+				
+				# if sibling node is leaf node (calculate d(A,B))
+				if node.get_sibling().is_leaf:
+					b = node.get_sibling()
+					a.branch_length = log_corrected_profile_distance(a.profile, b.profile)
+					
+				# if sibling node is internal node (calculate d(A,BC))
+				else:
+					b = node.get_sibling().children[0]
+					c = node.get_sibling().children[1]
+					a.branch_length = (log_corrected_profile_distance(a.profile, b.profile) + log_corrected_profile_distance(a.profile, c.profile) - \
+					log_corrected_profile_distance(b.profile, c.profile)) / 2
+            
+			# if current node is internal node
+			else:
+			
+				#check if current node is not root
+				if node.parent != None:
+				
+					# current node is AB, consisting of nodes A and B
+					ab = node
+					a = node.children[0]
+					b = node.children[1]
+					
+					# if sibling node is leaf node C (calculate d(AB,C))
+					if node.get_sibling().is_leaf:
+						c = node.get_sibling()
+						ab.branch_length = (log_corrected_profile_distance(a.profile, c.profile) + log_corrected_profile_distance(b.profile, c.profile) - \
+						log_corrected_profile_distance(a.profile, b.profile)) / 2
+						
+					# if sibling node is internal node CD, consisting of nodes C and D (calculate d(AB,CD))
+					else:
+						c = node.get_sibling().children[0]
+						d = node.get_sibling().children[1]
+						ab.branch_length = (log_corrected_profile_distance(a.profile, c.profile) + log_corrected_profile_distance(a.profile, d.profile) + \
+						log_corrected_profile_distance(b.profile, c.profile) + log_corrected_profile_distance(b.profile, d.profile)) / 4 \
+						- (log_corrected_profile_distance(a.profile, b.profile) + log_corrected_profile_distance(c.profile, d.profile)) / 2
