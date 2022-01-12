@@ -196,8 +196,8 @@ class Tree:
                     logger.debug(f'switching nodes: {c.name} - {b.name}')
                     self.switch_nodes(b, c)
 
-            for child in current_node.children:
-                queue.append(child)
+            if current_node.parent  and current_node.parent not in queue:
+                queue.append(current_node.parent)
 
         # recompute the profile for all internal nodes
         queue = [node for node in self.nodes if node.is_leaf]
@@ -231,8 +231,8 @@ class Tree:
         parent_1.recompute_profile()
 
         # rename the parent nodes
-        parent_1.rename()
-        parent_2.rename()
+        parent_1.name = parent_1.rename()
+        parent_2.name = parent_2.rename()
 
         logger.debug(f'new topology:\t{self.to_newick()}')
 
