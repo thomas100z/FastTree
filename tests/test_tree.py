@@ -51,3 +51,19 @@ class TestTree(TestCase):
         self.assertEqual(A.parent, tree.root)
         self.assertEqual(C, B.get_sibling())
         self.assertEqual(C.parent , A.get_sibling())
+
+    def test_nnis(self) -> None:
+        A = Node("A", "AAAAA")
+        B = Node("B", "TTTTA")
+        C = Node("C", "TTTAA")
+        D = Node( "D", "TTAAA")
+        E = Node("D", "TTAAA")
+        tree = Tree([A,B,C,D,E], 3,5)
+        tree.set_top_hits()
+
+        tree.construct_initial_topology()
+        tree.switch_nodes(D,C)
+
+        tree.nearest_neighbor_interchange()
+
+        self.assertEqual(E.get_sibling(), D)
