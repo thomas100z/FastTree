@@ -45,6 +45,14 @@ class Node:
     def __hash__(self):
         return hash(self.name)
 
+    def rename(self) -> str:
+        new_name = ""
+        for child in self.children:
+            child.rename()
+            new_name += child.name
+
+        return new_name
+
     def add_child(self, node: Node) -> None:
         """
         Adds a child to the node
