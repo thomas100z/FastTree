@@ -68,9 +68,10 @@ for i in range(round(nni_round)):
 # tree.calculate_branch_length()
 
 # print the tree
+logger.debug(f'Final topology: {tree.to_newick()}')
 print(tree.to_newick())
 tree.save(args.output_file)
 
 if args.t:
-    tree = Phylo.read(args.output_file, 'newick')
-    Phylo.draw(tree)
+    phylo_tree = Phylo.read(args.output_file, 'newick')
+    Phylo.draw(phylo_tree)

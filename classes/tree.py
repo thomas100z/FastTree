@@ -255,7 +255,7 @@ class Tree:
 
                         # check for best known
                         if node_distances[node] < current_node.best_known.distance:
-                            node.best_known.distance = node_distances[node]
+                            current_node.best_known.distance = node_distances[node]
                             current_node.best_known.node = node
 
                 # take 2m most similar
@@ -283,7 +283,7 @@ class Tree:
 
                                 # check for best known
                                 if node_distances[node] < current_node.best_known.distance:
-                                    node.best_known.distance = node_distances[node]
+                                    current_node.best_known.distance = node_distances[node]
                                     current_node.best_known.node = node
 
                         # set m most similar

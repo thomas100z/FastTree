@@ -8,7 +8,7 @@ class BestKnown:
     distance: float
 
     def __init__(self) -> None:
-        self.distance = float('inf')
+        self.distance = 1
 
 
 @total_ordering
