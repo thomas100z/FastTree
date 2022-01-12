@@ -151,14 +151,17 @@ class Tree:
             best_knows.put(joined_node)
 
         self.root = self.active_nodes.pop()
+        logger.debug(f'Initial topology:\t{self.to_newick()}')
 
     def nearest_neighbor_interchange(self) -> None:
         """
         Perform nearest neighbor interchange to evaluate if a split is favorable
         """
-        # for all nodes check if they support a split
-        for current_node in self.nodes:
+        queue = [node for node in self.nodes if node.is_leaf]
 
+        # for all nodes check if they support a split in postorder
+        while queue:
+            current_node = queue.pop()
             # because all nodes have two children the only condition is to have 3 parents
             if current_node.parent and current_node.parent.parent and current_node.parent.parent.parent:
 
@@ -166,12 +169,12 @@ class Tree:
                 a = current_node
                 b = current_node.get_sibling()
                 c = current_node.parent.get_sibling()
-                d = current_node.parent.parent.parent
+                d = a.parent.parent.parent
 
-                logger.debug(f'topology being evaluated: \ta=:{a.name}\tb:{b.name}\tc:{c.name}\td:{d.name}')
+                logger.debug(f'topology being evaluated: \ta=:{a.name}\tb:{b.name}\t\tc:{c.name}\td:{d.name}')
 
                 # topology abcd
-                d_abcd = Distances.log_corrected_profile_distance(a.profile, d.profile) + \
+                d_abcd = Distances.log_corrected_profile_distance(a.profile, b.profile) + \
                          Distances.log_corrected_profile_distance(c.profile, d.profile)
 
                 # topology acbd
@@ -182,7 +185,7 @@ class Tree:
                 d_bcad = Distances.log_corrected_profile_distance(b.profile, c.profile) + \
                          Distances.log_corrected_profile_distance(a.profile, d.profile)
 
-
+                logger.debug(f'topology distances - d_abcd:{d_abcd}\t d_acbd:{d_acbd}\t d_bcad:{d_bcad}')
 
                 if d_bcad < min(d_abcd, d_acbd):
                     logger.debug(f'switching nodes: {d.name} - {b.name}')
@@ -192,8 +195,20 @@ class Tree:
                     logger.debug(f'switching nodes: {c.name} - {b.name}')
                     self.switch_nodes(b, c)
 
-    @staticmethod
-    def switch_nodes(node_1: Node, node_2: Node) -> None:
+            for child in current_node.children:
+                queue.append(child)
+
+        # recompute the profile for all internal nodes
+        queue = [node for node in self.nodes if node.is_leaf]
+        while queue:
+            current_node = queue.pop()
+            for child in current_node.children:
+                queue.append(child)
+
+            if not current_node.is_leaf:
+                current_node.recompute_profile()
+
+    def switch_nodes(self, node_1: Node, node_2: Node) -> None:
         """
         Switches two nodes in the tree. Can be leaves or subtrees
         :param node_1: the first node to switch
@@ -214,6 +229,11 @@ class Tree:
         parent_2.recompute_profile()
         parent_1.recompute_profile()
 
+        # rename the parent nodes
+        parent_1.rename()
+        parent_2.rename()
+
+        logger.debug(f'new topology:\t{self.to_newick()}')
 
     def set_top_hits(self) -> None:
         """
