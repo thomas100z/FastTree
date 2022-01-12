@@ -65,7 +65,7 @@ for i in range(round(nni_round)):
 # local bootstrap
 
 # branch length
-# tree.calculate_branch_length()
+tree.calculate_branch_length()
 
 # print the tree
 logger.debug(f'Final topology: {tree.to_newick()}')
