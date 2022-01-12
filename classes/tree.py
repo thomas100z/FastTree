@@ -325,45 +325,37 @@ class Tree:
         """
         Calculates the branch length for all nodes
         """
-        for node in self.nodes:
+        r = self.root
 		
-			# if current node is leaf node A
-            if node.is_leaf:
-				a = node
-				
-				# if sibling node is leaf node (calculate d(A,B))
-				if node.get_sibling().is_leaf:
-					b = node.get_sibling()
-					a.branch_length = log_corrected_profile_distance(a.profile, b.profile)
-					
-				# if sibling node is internal node (calculate d(A,BC))
-				else:
-					b = node.get_sibling().children[0]
-					c = node.get_sibling().children[1]
-					a.branch_length = (log_corrected_profile_distance(a.profile, b.profile) + log_corrected_profile_distance(a.profile, c.profile) - \
-					log_corrected_profile_distance(b.profile, c.profile)) / 2
-            
-			# if current node is internal node
-			else:
-			
-				#check if current node is not root
-				if node.parent != None:
-				
-					# current node is AB, consisting of nodes A and B
-					ab = node
-					a = node.children[0]
-					b = node.children[1]
-					
-					# if sibling node is leaf node C (calculate d(AB,C))
-					if node.get_sibling().is_leaf:
-						c = node.get_sibling()
-						ab.branch_length = (log_corrected_profile_distance(a.profile, c.profile) + log_corrected_profile_distance(b.profile, c.profile) - \
-						log_corrected_profile_distance(a.profile, b.profile)) / 2
-						
-					# if sibling node is internal node CD, consisting of nodes C and D (calculate d(AB,CD))
-					else:
-						c = node.get_sibling().children[0]
-						d = node.get_sibling().children[1]
-						ab.branch_length = (log_corrected_profile_distance(a.profile, c.profile) + log_corrected_profile_distance(a.profile, d.profile) + \
-						log_corrected_profile_distance(b.profile, c.profile) + log_corrected_profile_distance(b.profile, d.profile)) / 4 \
-						- (log_corrected_profile_distance(a.profile, b.profile) + log_corrected_profile_distance(c.profile, d.profile)) / 2
+		for node in self.nodes:
+		
+			if node == self.root:
+
+                node.branch_length = 0
+
+            # if current node is leaf node A
+            elif node.is_leaf:
+                a = node
+
+                # if sibling node is leaf node (calculate d(A,AB))
+                if node.get_sibling().is_leaf:
+                    b = node.get_sibling()
+					a.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) + 
+									   Distances.log_corrected_profile_distance(a.profile, b.profile)) / 2
+
+            # if current node is internal node
+            else:
+
+				# current node is AB, consisting of nodes A and B (calculate d(AB,r))
+				ab = node
+				a = node.children[0]
+				b = node.children[1]
+				c = node.get_sibling()
+				ab.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
+									Distances.log_corrected_profile_distance(a.profile, c.profile) +
+									Distances.log_corrected_profile_distance(b.profile, r.profile) +
+									Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 -
+								   (Distances.log_corrected_profile_distance(a.profile, b.profile) +
+								    Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
+
+            logger.debug(f'node:{node.name}\tbranch length:{node.branch_length}')
