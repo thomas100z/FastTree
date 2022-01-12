@@ -1,12 +1,17 @@
 from classes import *
 import unittest
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='[%I:%M:%S %p]')
+logger = logging.getLogger('FastTree')
+logging.basicConfig(level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 class MainTester(unittest.TestCase):
 
     def test_main(self):
 
-        parser = aln_parser.AlignmentParser("./resources/fasttree-input.aln")
+        parser = aln_parser.AlignmentParser("./resources/test-small.aln")
         nodes = parser.get_data()
 
 
@@ -36,12 +41,20 @@ class MainTester(unittest.TestCase):
         # set the best join
         tree.construct_initial_topology()
 
+
+        for node in nodes:
+            print(f'{node=}\t{node.is_active=}')
+        print(tree.to_newick())
         # # NNI
-        for i in range(1): #range(round(nni_round)):
-            if joins_amount > 200:
+
+        for i in range(round(nni_round)):
+
+            if tree.joins > 200:
                 tp.recompute(tree.active_nodes)
 
             tree.nearest_neighbor_interchange()
+
+
         #
         # # local bootstrap
         #

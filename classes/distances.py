@@ -90,13 +90,14 @@ class Distances:
         : du(i,j) - r(i) - r(j)
         """
         # can change the return statement to compute neighbor join with or without total Profile
-# =============================================================================
-#         return Distances.node_distance(node1, node2) - Distances.out_distance(node1, active) - Distances.out_distance(
-#             node2, active)
-# =============================================================================
-        return Distances.node_distance(node1, node2) - Distances.total_profile_out_distance(node1, TotalProfile(active), active) -\
-            Distances.total_profile_out_distance(node2, TotalProfile(active), active)
-    
+        # =============================================================================
+        #         return Distances.node_distance(node1, node2) - Distances.out_distance(node1, active) - Distances.out_distance(
+        #             node2, active)
+        # =============================================================================
+        return Distances.node_distance(node1, node2) - Distances.total_profile_out_distance(node1, TotalProfile(active),
+                                                                                            active) - \
+               Distances.total_profile_out_distance(node2, TotalProfile(active), active)
+
     @staticmethod
     def total_profile_out_distance(node: Node, tp: TotalProfile, active: list) -> float:
         """
@@ -107,10 +108,10 @@ class Distances:
         S = 0
         for n in active:
             S += Distances.up_distance(node)
-            
+
         result = len(active) * Distances.profile_distance(node.profile, tp.total_profile) - \
                  Distances.average_node_children_distance(node) - (len(active) - 2) * Distances.up_distance(node) - S
-        
+
         return result / (len(active) - 2) if len(active) > 2 else result / (len(active))
 
     @staticmethod
@@ -119,7 +120,7 @@ class Distances:
         ∆(i, i): the average distance between children of i, including self-comparisons
 
         """
-        #return 0
+        # return 0
         if len(node.children) == 0: return 0
         S = 0
         for child in node.children:
@@ -127,3 +128,19 @@ class Distances:
                 S += Distances.profile_distance(child.profile, child2.profile)
         return S / (len(node.children) * len(node.children))
 
+    @staticmethod
+    def log_corrected_profile_distance(profile_1: np.array, profile_2: np.array) -> float:
+        """
+        Calculates the log corrected profile distance between two profiles: - 3/4 log( 1 - 4/3 d)
+        where d is the profile distance
+        :param profile_1: the first profile
+        :param profile_2: the second profile
+        :return:
+        """
+        return  Distances.profile_distance(profile_1, profile_2)
+        # du = 1 - (4 / 3) * Distances.profile_distance(profile_1, profile_2)
+        # print(du)
+        # if 0 < du:
+        #     return -3 / 4 * math.log10(du)
+        # else:
+        #     return 1.5
