@@ -35,3 +35,29 @@ class TestNode(TestCase):
         C.parent = A
 
         self.assertEqual(B.get_sibling().name, 'C')
+
+    def test_rename(self) -> None:
+        A = Node("A", "ATCGCG")
+        B = Node("B", "ATCGAA")
+        C = Node("C", "ATCGGG")
+        A.top_hits = {}
+        B.top_hits = {}
+        C.top_hits = {}
+
+        tree = Tree([A, B, C], 1, 1)
+
+        AB = tree.join_nodes(A, B)
+        ABC = tree.join_nodes(AB, C)
+
+        ABC.rename()
+        self.assertEqual(ABC.name, "ABC")
+
+    def test_node_comparison(self) -> None:
+        A = Node("A", "ATCGCG")
+        B = Node("B", "ATCGAA")
+        A.best_known.distance = 1
+        B.best_known.distance = 5
+
+        self.assertNotEqual(A, B)
+        self.assertEqual(A, A)
+        self.assertTrue(A < B)
