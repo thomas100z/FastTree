@@ -20,5 +20,34 @@ class TestTree(TestCase):
         self.assertTrue(len(new_node.top_hits) > 0)
 
 
+    def test_tree_topology(self) -> None:
+        # testing some basic tree structures
+        A = Node("A", "ATCGCG")
+        B = Node("B", "ATCGAA")
+        C = Node("C", "ATCGGG")
 
-    # TODO tests: correct handeling of identical sequence
+        tree = Tree([A,B,C], 2,3)
+        tree.set_top_hits()
+        tree.construct_initial_topology()
+
+        self.assertEqual(tree.root.name, "ABC")
+        self.assertEqual([i.name for i in tree.root.children], ['C', 'AB'])
+        self.assertEqual(A.get_sibling(), B)
+
+
+    def test_switch_node(self) -> None:
+
+        A = Node("A", "ATCGCG")
+        B = Node("B", "ATCGAA")
+        C = Node("C", "ATCGGG")
+
+        tree = Tree([A,B,C], 2,3)
+        tree.set_top_hits()
+        tree.construct_initial_topology()
+
+        tree.switch_nodes(A,C)
+
+        self.assertEqual(C.get_sibling(), B)
+        self.assertEqual(A.parent, tree.root)
+        self.assertEqual(C, B.get_sibling())
+        self.assertEqual(C.parent , A.get_sibling())

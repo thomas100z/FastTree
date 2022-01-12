@@ -230,8 +230,8 @@ class Tree:
         parent_1.recompute_profile()
 
         # rename the parent nodes
-        parent_1.rename()
-        parent_2.rename()
+        parent_1.name = parent_1.rename()
+        parent_2.name = parent_2.rename()
 
         logger.debug(f'new topology:\t{self.to_newick()}')
 
