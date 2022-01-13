@@ -122,7 +122,7 @@ class Tree:
 
             # log initial best nodes
             logger.debug(f'{best=}\t, {len(m_best_known)}\t{len(self.active_nodes)}')
-            
+
             # perform hill climbing for the current two best nodes
             node_1 = best
             node_2 = best.best_known.node
@@ -149,7 +149,7 @@ class Tree:
 
             joined_node = self.join_nodes(selected_1, selected_2)
             best_knows.put(joined_node)
-        
+
         # save the last remaining active node as the root of the tree
         self.root = self.active_nodes.pop()
         logger.debug(f'Initial topology:\t{self.to_newick()}')
@@ -196,7 +196,7 @@ class Tree:
                     logger.debug(f'switching nodes: {c.name} - {b.name}')
                     self.switch_nodes(b, c)
 
-            if current_node.parent  and current_node.parent not in queue:
+            if current_node.parent and current_node.parent not in queue:
                 queue.append(current_node.parent)
 
         # recompute the profile for all internal nodes
@@ -326,11 +326,10 @@ class Tree:
         Calculates the branch length for all nodes
         """
         r = self.root
-		
-		for node in self.nodes:
-		
-			if node == self.root:
 
+        for node in self.nodes:
+
+            if node == self.root:
                 node.branch_length = 0
 
             # if current node is leaf node A
@@ -340,22 +339,21 @@ class Tree:
                 # if sibling node is leaf node (calculate d(A,AB))
                 if node.get_sibling().is_leaf:
                     b = node.get_sibling()
-					a.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) + 
-									   Distances.log_corrected_profile_distance(a.profile, b.profile)) / 2
+                    a.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
+                                       Distances.log_corrected_profile_distance(a.profile, b.profile)) / 2
 
             # if current node is internal node
             else:
-
-				# current node is AB, consisting of nodes A and B (calculate d(AB,r))
-				ab = node
-				a = node.children[0]
-				b = node.children[1]
-				c = node.get_sibling()
-				ab.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
-									Distances.log_corrected_profile_distance(a.profile, c.profile) +
-									Distances.log_corrected_profile_distance(b.profile, r.profile) +
-									Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 -
-								   (Distances.log_corrected_profile_distance(a.profile, b.profile) +
-								    Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
+                # current node is AB, consisting of nodes A and B (calculate d(AB,r))
+                ab = node
+                a = node.children[0]
+                b = node.children[1]
+                c = node.get_sibling()
+                ab.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
+                                    Distances.log_corrected_profile_distance(a.profile, c.profile) +
+                                    Distances.log_corrected_profile_distance(b.profile, r.profile) +
+                                    Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 - \
+                                   (Distances.log_corrected_profile_distance(a.profile, b.profile) +
+                                    Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
 
             logger.debug(f'node:{node.name}\tbranch length:{node.branch_length}')
