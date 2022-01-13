@@ -82,21 +82,17 @@ class Distances:
         return S / (len(active) - 2) if len(active) > 2 else S / (len(active))
 
     @staticmethod
-    def neighbor_join_distance(node1: Node, node2: Node, active: list) -> float:
+    def neighbor_join_distance(node1: Node, node2: Node, active: list, total_profile: TotalProfile) -> float:
         """
         Neighbor-Joining Distance: du(i,j) - r(i) - r(j)
+        :param total_profile: total profile of all the nodes
         :param node1: the first node
         :param node2: the second node
         :param active: the list of all active nodes
         """
-        # can change the return statement to compute neighbor join with or without total Profile
-        # =============================================================================
-        #         return Distances.node_distance(node1, node2) - Distances.out_distance(node1, active) - Distances.out_distance(
-        #             node2, active)
-        # =============================================================================
-        return Distances.node_distance(node1, node2) - Distances.total_profile_out_distance(node1, TotalProfile(active),
-                                                                                            active) - \
-               Distances.total_profile_out_distance(node2, TotalProfile(active), active)
+        return Distances.node_distance(node1, node2) - Distances.total_profile_out_distance(node1, total_profile,
+                                                                                                    active) - \
+                       Distances.total_profile_out_distance(node2, total_profile, active)
 
     @staticmethod
     def total_profile_out_distance(node: Node, tp: TotalProfile, active: list) -> float:
@@ -121,7 +117,6 @@ class Distances:
         ∆(i, i): the average distance between children of i, including self-comparisons
         :param node: the given node under examination
         """
-        # return 0
         if len(node.children) == 0: return 0
         S = 0
         for child in node.children:
@@ -138,7 +133,6 @@ class Distances:
         :param profile_2: the second profile
         :return:
         """
-        #return  Distances.profile_distance(profile_1, profile_2)
         du = 1 - (4 / 3) * Distances.profile_distance(profile_1, profile_2)
         if 0 < du:
             return -3 / 4 * math.log10(du)

@@ -43,6 +43,7 @@ for node in nodes:
 
 # calculate total profile
 tp = TotalProfile(nodes)
+tree.set_total_profile(tp)
 
 logging.debug('total profile:')
 logging.debug(f'{tp.total_profile=}')
@@ -59,9 +60,9 @@ tree.construct_initial_topology()
 
 # NNI
 for i in range(round(nni_round)):
-
     if tree.joins > 200:
         tp.recompute(tree.active_nodes)
+        tree.set_total_profile(tp)
 
     tree.nearest_neighbor_interchange()
 

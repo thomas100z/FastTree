@@ -4,6 +4,7 @@ from .node import Node
 from .distances import Distances
 import logging
 import random
+from .total_profile import TotalProfile
 
 logger = logging.getLogger('FastTree')
 
@@ -27,6 +28,9 @@ class Tree:
         :return: newick string
         """
         return f"{self.root.newick()};"
+
+    def set_total_profile(self, total_profile: TotalProfile) -> None:
+        self.tp = total_profile
 
     def save(self, path: str) -> None:
         """
@@ -66,7 +70,8 @@ class Tree:
                 min_distance = float('inf')
                 for node in self.active_nodes:
                     if Distances.neighbor_join_distance(joined_node, node,
-                                                        self.active_nodes) < min_distance and node != joined_node:
+                                                        self.active_nodes,
+                                                        self.tp) < min_distance and node != joined_node:
                         joined_node.best_known.node = node
 
         # check the top_hits lists of all other nodes for the removed nodes and replace with active ancestor
@@ -77,7 +82,8 @@ class Tree:
             if node_2 in node.top_hits:
                 del node.top_hits[node_2]
             if node_1 in node.top_hits or node_2 in node.top_hits and node != joined_node:
-                node.top_hits[joined_node] = Distances.neighbor_join_distance(joined_node, node, self.active_nodes)
+                node.top_hits[joined_node] = Distances.neighbor_join_distance(joined_node, node, self.active_nodes,
+                                                                              self.tp)
 
         return joined_node
 
@@ -98,7 +104,7 @@ class Tree:
                 if node.best_known.node not in self.active_nodes:
                     node.best_known.node = node.best_known.node.parent
                     node.best_known.distance = Distances.neighbor_join_distance(node.best_known.node, node,
-                                                                                self.active_nodes)
+                                                                                self.active_nodes, self.tp)
             for node in m_best_known:
                 if not node.is_active:
                     m_best_known.remove(node)
@@ -113,7 +119,7 @@ class Tree:
             least_distance = float('inf')
             for node in m_best_known:
                 if node.is_active:
-                    distance = Distances.neighbor_join_distance(node, node.best_known.node, self.active_nodes)
+                    distance = Distances.neighbor_join_distance(node, node.best_known.node, self.active_nodes, self.tp)
                     node.best_known.distance = distance
                     if distance < least_distance:
                         best = node
@@ -134,18 +140,19 @@ class Tree:
 
             # Local Hill Climbing
             for node in node_1.top_hits:
-                distance = Distances.neighbor_join_distance(node_1, node, self.active_nodes)
+                distance = Distances.neighbor_join_distance(node_1, node, self.active_nodes, self.tp)
                 if distance < least_distance:
                     selected_1 = node_1
                     selected_2 = node
                     least_distance = distance
 
             for node in node_2.top_hits:
-                distance = Distances.neighbor_join_distance(node, node_2, self.active_nodes)
+                distance = Distances.neighbor_join_distance(node, node_2, self.active_nodes, self.tp)
                 if distance < least_distance:
                     selected_1 = node
                     selected_2 = node_2
                     least_distance = distance
+
             # log final best nodes after hill climbing
             logger.debug(f"joining nodes: {selected_1.name} -  {selected_2.name}")
 
@@ -194,8 +201,8 @@ class Tree:
                     logger.debug(f'switching nodes: {d.name} - {b.name}')
 
                     if self.do_bootstrap:
-                        if self.bootstrap(a,b,c,d,"d_bcad"):
-                                self.switch_nodes(b, a)
+                        if self.bootstrap(a, b, c, d, "d_bcad"):
+                            self.switch_nodes(b, a)
                     else:
                         self.switch_nodes(b, a)
 
@@ -250,8 +257,6 @@ class Tree:
 
         logger.debug(f'bootstrap support: {result > (self.bootstrap_rounds / 2)}')
         return result > (self.bootstrap_rounds / 2)
-                
-            
 
     def switch_nodes(self, node_1: Node, node_2: Node) -> None:
         """
@@ -291,7 +296,8 @@ class Tree:
 
                 for node in self.nodes:
                     if node != current_node:
-                        node_distances[node] = Distances.neighbor_join_distance(current_node, node, self.active_nodes)
+                        node_distances[node] = Distances.neighbor_join_distance(current_node, node, self.active_nodes,
+                                                                                self.tp)
 
                         # check for best known
                         if node_distances[node] < node.best_known.distance:
@@ -320,7 +326,7 @@ class Tree:
                         for node in node_distances:
                             if node != current_node:
                                 other_distances[node] = Distances.neighbor_join_distance(current_node, node,
-                                                                                         self.active_nodes)
+                                                                                         self.active_nodes, self.tp)
                                 # check for best known
                                 if node_distances[node] < node.best_known.distance:
                                     node.best_known.distance = node_distances[node]
@@ -349,7 +355,7 @@ class Tree:
         node_distances: dict[Node, float] = {}
         for node in children_top_hits:
             if node != new_node:
-                node_distances[node] = Distances.neighbor_join_distance(new_node, node, self.active_nodes)
+                node_distances[node] = Distances.neighbor_join_distance(new_node, node, self.active_nodes, self.tp)
 
                 # check for best known
                 if node_distances[node] < node.best_known.distance:
@@ -372,20 +378,20 @@ class Tree:
         r = self.root
 
         for node in self.nodes:
-            
+
             if node == self.root:
                 node.branch_length = 0
 
             # if current node is leaf node A
             elif node.is_leaf:
-                
+
                 a = node
-                    
+
                 b = node.get_sibling()
                 node.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
                                    Distances.log_corrected_profile_distance(a.profile, b.profile) -
                                    Distances.log_corrected_profile_distance(b.profile, r.profile)) / 2
-                
+
                 if node.branch_length < 0:
                     b.branch_length -= node.branch_length
                     node.branch_length = 0
@@ -403,9 +409,9 @@ class Tree:
                                     Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 - \
                                    (Distances.log_corrected_profile_distance(a.profile, b.profile) +
                                     Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
-               
+
                 if node.branch_length < 0:
                     c.branch_length -= node.branch_length
                     node.branch_length = 0
-            
+
             logger.debug(f'node:{node.name}\tbranch length:{node.branch_length}')
