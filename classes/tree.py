@@ -340,10 +340,13 @@ class Tree:
                 a = node
                     
                 b = node.get_sibling()
-                node.branch_length = (Distances.profile_distance(a.profile, r.profile) +
-                                   Distances.profile_distance(a.profile, b.profile) -
-                                   Distances.profile_distance(b.profile, r.profile)) / 2
-                    
+                node.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
+                                   Distances.log_corrected_profile_distance(a.profile, b.profile) -
+                                   Distances.log_corrected_profile_distance(b.profile, r.profile)) / 2
+                
+                if node.branch_length < 0:
+                    b.branch_length -= node.branch_length
+                    node.branch_length = 0
 
             # if current node is internal node
             else:
@@ -352,11 +355,15 @@ class Tree:
                 a = node.children[0]
                 b = node.children[1]
                 c = node.get_sibling()
-                node.branch_length = (Distances.profile_distance(a.profile, r.profile) +
-                                    Distances.profile_distance(a.profile, c.profile) +
-                                    Distances.profile_distance(b.profile, r.profile) +
-                                    Distances.profile_distance(b.profile, c.profile)) / 4 - \
-                                   (Distances.profile_distance(a.profile, b.profile) +
-                                    Distances.profile_distance(r.profile, c.profile)) / 2
+                node.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
+                                    Distances.log_corrected_profile_distance(a.profile, c.profile) +
+                                    Distances.log_corrected_profile_distance(b.profile, r.profile) +
+                                    Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 - \
+                                   (Distances.log_corrected_profile_distance(a.profile, b.profile) +
+                                    Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
+               
+                if node.branch_length < 0:
+                    c.branch_length -= node.branch_length
+                    node.branch_length = 0
             
             logger.debug(f'node:{node.name}\tbranch length:{node.branch_length}')
