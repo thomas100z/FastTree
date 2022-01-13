@@ -208,6 +208,8 @@ class Tree:
 
             if not current_node.is_leaf:
                 current_node.recompute_profile()
+                
+            
 
     def switch_nodes(self, node_1: Node, node_2: Node) -> None:
         """
@@ -328,19 +330,20 @@ class Tree:
         r = self.root
 
         for node in self.nodes:
-
+            
             if node == self.root:
                 node.branch_length = 0
 
             # if current node is leaf node A
             elif node.is_leaf:
+                
                 a = node
-
-                # if sibling node is leaf node (calculate d(A,AB))
-                if node.get_sibling().is_leaf:
-                    b = node.get_sibling()
-                    a.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
-                                       Distances.log_corrected_profile_distance(a.profile, b.profile)) / 2
+                    
+                b = node.get_sibling()
+                node.branch_length = (Distances.profile_distance(a.profile, r.profile) +
+                                   Distances.profile_distance(a.profile, b.profile) -
+                                   Distances.profile_distance(b.profile, r.profile)) / 2
+                    
 
             # if current node is internal node
             else:
@@ -349,11 +352,11 @@ class Tree:
                 a = node.children[0]
                 b = node.children[1]
                 c = node.get_sibling()
-                ab.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
-                                    Distances.log_corrected_profile_distance(a.profile, c.profile) +
-                                    Distances.log_corrected_profile_distance(b.profile, r.profile) +
-                                    Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 - \
-                                   (Distances.log_corrected_profile_distance(a.profile, b.profile) +
-                                    Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
-
+                node.branch_length = (Distances.profile_distance(a.profile, r.profile) +
+                                    Distances.profile_distance(a.profile, c.profile) +
+                                    Distances.profile_distance(b.profile, r.profile) +
+                                    Distances.profile_distance(b.profile, c.profile)) / 4 - \
+                                   (Distances.profile_distance(a.profile, b.profile) +
+                                    Distances.profile_distance(r.profile, c.profile)) / 2
+            
             logger.debug(f'node:{node.name}\tbranch length:{node.branch_length}')
