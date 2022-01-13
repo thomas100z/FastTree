@@ -3,20 +3,22 @@ from queue import PriorityQueue
 from .node import Node
 from .distances import Distances
 import logging
+import random
 
 logger = logging.getLogger('FastTree')
-
-DEBUG = False
 
 
 class Tree:
     root: Node
 
-    def __init__(self, nodes: list[Node], m: int, N: int) -> None:
+    def __init__(self, nodes: list[Node], m: int, N: int, L: int, bootstrap=False, bootstrap_round=50) -> None:
         self.nodes = nodes.copy()
         self.active_nodes = nodes.copy()
         self.m = m
         self.N = N
+        self.L = L
+        self.do_bootstrap = bootstrap
+        self.bootstrap_rounds = bootstrap_round
         self.joins = 0
 
     def to_newick(self) -> str:
@@ -190,24 +192,64 @@ class Tree:
 
                 if d_bcad < min(d_abcd, d_acbd):
                     logger.debug(f'switching nodes: {d.name} - {b.name}')
-                    self.switch_nodes(b, a)
+
+                    if self.do_bootstrap:
+                        if self.bootstrap(a,b,c,d,"d_bcad"):
+                                self.switch_nodes(b, a)
+                    else:
+                        self.switch_nodes(b, a)
 
                 elif d_acbd < min(d_abcd, d_bcad):
                     logger.debug(f'switching nodes: {c.name} - {b.name}')
-                    self.switch_nodes(b, c)
+
+                    if self.do_bootstrap:
+                        if self.bootstrap(a, b, c, d, "d_acbd"):
+                            self.switch_nodes(b, c)
+                    else:
+                        self.switch_nodes(b, c)
 
             if current_node.parent and current_node.parent not in queue:
                 queue.append(current_node.parent)
 
         # recompute the profile for all internal nodes
-        queue = [node for node in self.nodes if node.is_leaf]
+        queue = [node.parent for node in self.nodes if node.is_leaf]
+
         while queue:
             current_node = queue.pop()
-            for child in current_node.children:
-                queue.append(child)
+            if current_node != self.root and current_node.parent not in queue:
+                queue.append(current_node.parent)
 
-            if not current_node.is_leaf:
-                current_node.recompute_profile()
+    def bootstrap(self, a: Node, b: Node, c: Node, d: Node, split: str) -> bool:
+        result = 0
+
+        for i in range(self.bootstrap_rounds):
+            random_columns = sorted(random.sample(range(self.L), round(self.L * 0.8)))
+
+            bootstrap_profile_a = a.profile[:, random_columns]
+            bootstrap_profile_b = b.profile[:, random_columns]
+            bootstrap_profile_c = c.profile[:, random_columns]
+            bootstrap_profile_d = d.profile[:, random_columns]
+
+            # topology abcd
+            d_abcd = Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_b) + \
+                     Distances.log_corrected_profile_distance(bootstrap_profile_c, bootstrap_profile_d)
+
+            # topology acbd
+            d_acbd = Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_c) + \
+                     Distances.log_corrected_profile_distance(bootstrap_profile_b, bootstrap_profile_d)
+
+            # topology adbc
+            d_bcad = Distances.log_corrected_profile_distance(bootstrap_profile_b, bootstrap_profile_c) + \
+                     Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_d)
+
+            if split == "d_acbd":
+                result += d_acbd < min(d_abcd, d_bcad)
+
+            if split == "d_bcad":
+                result += d_bcad < min(d_abcd, d_acbd)
+
+        logger.debug(f'bootstrap support: {result > (self.bootstrap_rounds / 2)}')
+        return result > (self.bootstrap_rounds / 2)
                 
             
 

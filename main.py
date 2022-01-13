@@ -12,6 +12,7 @@ parser.add_argument('input_file', metavar='input_file', type=str,
 parser.add_argument('output_file', metavar='output_file', type=str,
                     help='output file in newick format')
 parser.add_argument('-v', help='print verbose debugging information', action='store_true')
+parser.add_argument('-b', help='use bootstrapping to evaluate splitting', action='store_true')
 parser.add_argument('-t', help='view result in tree format', action='store_true')
 args = parser.parse_args()
 
@@ -30,7 +31,9 @@ parser = AlignmentParser(args.input_file)
 nodes = parser.get_data()
 N = len(nodes)
 m = round(math.sqrt(N))
-tree = Tree(nodes, m, N)
+L = len(nodes[0].alignment)
+bootstrapping_round = 10
+tree = Tree(nodes, m, N, L, args.b, bootstrapping_round)
 
 a = 4
 nni_round = math.log(N) / math.log(2) + 1
