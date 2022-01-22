@@ -22,6 +22,7 @@ class Node:
         self.is_leaf = is_leaf
         self.is_active = True
         self.branch_length = 1
+        self.support_value = 0
         self.best_known = BestKnown()
 
         if is_leaf:
@@ -34,18 +35,25 @@ class Node:
     def _is_valid_operand(self, other: object) -> bool:
         return hasattr(other, "best_known") and hasattr(self, "best_known")
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Node) -> bool:
         return self.name == other.name
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: ...) -> bool:
         if not self._is_valid_operand(other):
             return NotImplemented
         return self.best_known.distance < other.best_known.distance
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
+    def __repr__(self) -> str:
+        return f'<Node:{self.name}>'
+
     def rename(self) -> str:
+        """
+        Update the name of the node after an interchange
+        :return: the new name of the node
+        """
         new_name = ""
         for child in self.children:
             child.rename()
@@ -66,11 +74,17 @@ class Node:
         :return: newick string
         """
         result = ""
+
+        if self.support_value and not self.is_leaf:
+            support_val = self.support_value
+        else:
+            support_val = ""
+
         if self.is_leaf:
             result += f'{self.name}:{self.branch_length}'
         else:
             self.children.sort(key=lambda x: x.is_leaf, reverse=True)
-            result += f'({",".join([child.newick() for child in self.children])}):{self.branch_length}'
+            result += f'({",".join([child.newick() for child in self.children])}){support_val}:{self.branch_length}'
 
         return result
 
@@ -84,7 +98,7 @@ class Node:
         """
         return np.mean(np.array([profile1, profile2]), axis=0)
 
-    def form_profile(self, psuesdocount=False) -> np.array[float]:
+    def form_profile(self, psuesdocount=False) -> np.array:
         """
         Constrcuts the profile of the sequence of the node
         :param psuesdocount: bool - use psuedocount
@@ -121,4 +135,3 @@ class Node:
         """
         parent_children = self.parent.children
         return parent_children[parent_children.index(self) - 1]
-

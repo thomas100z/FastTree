@@ -11,6 +11,7 @@ logger = logging.getLogger('FastTree')
 
 class Tree:
     root: Node
+    tp: TotalProfile
 
     def __init__(self, nodes: list[Node], m: int, N: int, L: int, bootstrap=False, bootstrap_round=50) -> None:
         self.nodes = nodes.copy()
@@ -30,6 +31,10 @@ class Tree:
         return f"{self.root.newick()};"
 
     def set_total_profile(self, total_profile: TotalProfile) -> None:
+        """
+        Sets the total profile
+        :param total_profile: total profile to set
+        """
         self.tp = total_profile
 
     def save(self, path: str) -> None:
@@ -199,21 +204,11 @@ class Tree:
 
                 if d_bcad < min(d_abcd, d_acbd):
                     logger.debug(f'switching nodes: {d.name} - {b.name}')
-
-                    if self.do_bootstrap:
-                        if self.bootstrap(a, b, c, d, "d_bcad"):
-                            self.switch_nodes(b, a)
-                    else:
-                        self.switch_nodes(b, a)
+                    self.switch_nodes(b, a)
 
                 elif d_acbd < min(d_abcd, d_bcad):
                     logger.debug(f'switching nodes: {c.name} - {b.name}')
-
-                    if self.do_bootstrap:
-                        if self.bootstrap(a, b, c, d, "d_acbd"):
-                            self.switch_nodes(b, c)
-                    else:
-                        self.switch_nodes(b, c)
+                    self.switch_nodes(b, c)
 
             if current_node.parent and current_node.parent not in queue:
                 queue.append(current_node.parent)
@@ -226,37 +221,55 @@ class Tree:
             if current_node != self.root and current_node.parent not in queue:
                 queue.append(current_node.parent)
 
-    def bootstrap(self, a: Node, b: Node, c: Node, d: Node, split: str) -> bool:
-        result = 0
+    def bootstrap(self) -> None:
+        """
+        Function calculates the support values for all internal splits.
+        """
+        # for each split evaluate if bootstrapping support ti
+        valid_nodes = [n for n in self.nodes if n.parent and n.parent.parent]
+        for node in valid_nodes:
 
-        for i in range(self.bootstrap_rounds):
-            random_columns = sorted(random.sample(range(self.L), round(self.L * 0.8)))
+            a = node
+            b = node.get_sibling()
+            c = node.parent.get_sibling()
 
-            bootstrap_profile_a = a.profile[:, random_columns]
-            bootstrap_profile_b = b.profile[:, random_columns]
-            bootstrap_profile_c = c.profile[:, random_columns]
-            bootstrap_profile_d = d.profile[:, random_columns]
+            if a.parent.parent.parent:
+                d = a.parent.parent.parent
 
-            # topology abcd
-            d_abcd = Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_b) + \
-                     Distances.log_corrected_profile_distance(bootstrap_profile_c, bootstrap_profile_d)
+            else:
+                d = c.children[0]
 
-            # topology acbd
-            d_acbd = Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_c) + \
-                     Distances.log_corrected_profile_distance(bootstrap_profile_b, bootstrap_profile_d)
+            if a.parent.support_value:
+                continue
 
-            # topology adbc
-            d_bcad = Distances.log_corrected_profile_distance(bootstrap_profile_b, bootstrap_profile_c) + \
-                     Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_d)
+            result = 0
+            for i in range(self.bootstrap_rounds):
+                random_columns = sorted(random.sample(range(self.L), round(self.L * 0.2)))
 
-            if split == "d_acbd":
-                result += d_acbd < min(d_abcd, d_bcad)
+                bootstrap_profile_a = a.profile[:, random_columns]
+                bootstrap_profile_b = b.profile[:, random_columns]
+                bootstrap_profile_c = c.profile[:, random_columns]
+                bootstrap_profile_d = d.profile[:, random_columns]
 
-            if split == "d_bcad":
-                result += d_bcad < min(d_abcd, d_acbd)
+                # topology abcd
+                d_abcd = Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_b) + \
+                         Distances.log_corrected_profile_distance(bootstrap_profile_c, bootstrap_profile_d)
 
-        logger.debug(f'bootstrap support: {result > (self.bootstrap_rounds / 2)}')
-        return result > (self.bootstrap_rounds / 2)
+                # topology acbd
+                d_acbd = Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_c) + \
+                         Distances.log_corrected_profile_distance(bootstrap_profile_b, bootstrap_profile_d)
+
+                # topology adbc
+                d_bcad = Distances.log_corrected_profile_distance(bootstrap_profile_b, bootstrap_profile_c) + \
+                         Distances.log_corrected_profile_distance(bootstrap_profile_a, bootstrap_profile_d)
+
+                # check if the bootstrap supports the split
+                if d_abcd < min(d_acbd, d_bcad):
+                    result += 1
+
+            # the final bootstrap value for the split
+            logger.debug(f'bootstrap support: {result / self.bootstrap_rounds}')
+            a.parent.support_value = result / self.bootstrap_rounds
 
     def switch_nodes(self, node_1: Node, node_2: Node) -> None:
         """
@@ -386,11 +399,10 @@ class Tree:
             elif node.is_leaf:
 
                 a = node
-
                 b = node.get_sibling()
                 node.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
-                                   Distances.log_corrected_profile_distance(a.profile, b.profile) -
-                                   Distances.log_corrected_profile_distance(b.profile, r.profile)) / 2
+                                      Distances.log_corrected_profile_distance(a.profile, b.profile) -
+                                      Distances.log_corrected_profile_distance(b.profile, r.profile)) / 2
 
                 if node.branch_length < 0:
                     b.branch_length -= node.branch_length
@@ -404,11 +416,11 @@ class Tree:
                 b = node.children[1]
                 c = node.get_sibling()
                 node.branch_length = (Distances.log_corrected_profile_distance(a.profile, r.profile) +
-                                    Distances.log_corrected_profile_distance(a.profile, c.profile) +
-                                    Distances.log_corrected_profile_distance(b.profile, r.profile) +
-                                    Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 - \
-                                   (Distances.log_corrected_profile_distance(a.profile, b.profile) +
-                                    Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
+                                      Distances.log_corrected_profile_distance(a.profile, c.profile) +
+                                      Distances.log_corrected_profile_distance(b.profile, r.profile) +
+                                      Distances.log_corrected_profile_distance(b.profile, c.profile)) / 4 - \
+                                     (Distances.log_corrected_profile_distance(a.profile, b.profile) +
+                                      Distances.log_corrected_profile_distance(r.profile, c.profile)) / 2
 
                 if node.branch_length < 0:
                     c.branch_length -= node.branch_length

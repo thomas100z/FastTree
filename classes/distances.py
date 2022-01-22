@@ -82,7 +82,7 @@ class Distances:
         return S / (len(active) - 2) if len(active) > 2 else S / (len(active))
 
     @staticmethod
-    def neighbor_join_distance(node1: Node, node2: Node, active: list, total_profile: TotalProfile) -> float:
+    def neighbor_join_distance(node1: Node, node2: Node, active: list[Node], total_profile: TotalProfile) -> float:
         """
         Neighbor-Joining Distance: du(i,j) - r(i) - r(j)
         :param total_profile: total profile of all the nodes
@@ -95,7 +95,7 @@ class Distances:
                        Distances.total_profile_out_distance(node2, total_profile, active)
 
     @staticmethod
-    def total_profile_out_distance(node: Node, tp: TotalProfile, active: list) -> float:
+    def total_profile_out_distance(node: Node, tp: TotalProfile, active: list[Node]) -> float:
         """
         r(i): Out Distance = n∆(i, T) − ∆(i, i) − (n − 1)u(i) + u(i) - Σ u(j)
         :param node: the given node

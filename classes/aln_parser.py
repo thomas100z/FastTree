@@ -13,7 +13,7 @@ class AlignmentParser:
         except:
             raise Exception("Input file not in correct format!")
 
-    def get_data(self) -> list:
+    def get_data(self) -> list[Node]:
         """
         Retrieves the alignment data in a Node object
         :return: list of Node
