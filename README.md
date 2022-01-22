@@ -7,6 +7,8 @@ original authors: Morgan N. Price, Paramvir S. Dehal, and Adam P. Arkin
 
 DOI: 10.1093/molbev/msp077
 
+Implementaiton by Thomas Zuiker, Lars van den Biggelaar, Stelios Poulakakis Daktylidis 
+
 
 ## Installation
 Install necessary packages by running:
@@ -15,3 +17,4 @@ Install necessary packages by running:
 
 ## Running the FastTree algorithm
 ![](argparse.png)
+
